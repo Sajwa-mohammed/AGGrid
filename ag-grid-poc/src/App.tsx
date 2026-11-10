@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import type { ColDef } from 'ag-grid-community';
+import type { IDatasource, IGetRowsParams } from 'ag-grid-community';
 import { employees, type Employee } from './data';
 import type { ICellRendererParams } from 'ag-grid-community';
+import { fetchEmployees } from './fakeApi';
 
 export default function App() {
   const colors = { Active: '#16a34a', 'On Leave': '#ea580c', Inactive: '#6b7280' };
@@ -28,12 +30,23 @@ const Actions = (p: ICellRendererParams<Employee>) =>
   }), []);
 
 
+  const datasource = useMemo<IDatasource>(() => ({
+  getRows: (p: IGetRowsParams) => {
+    fetchEmployees(p)
+      .then(({ rows, total }) => p.successCallback(rows, total))
+      .catch(() => p.failCallback());
+  },
+}), []);
+
 
   return (
     <div style={{ height: '90vh' }}>
-      <AgGridReact rowData={employees} columnDefs={columnDefs}
+      {/* <AgGridReact rowData={employees} columnDefs={columnDefs}
         defaultColDef={defaultColDef} pagination paginationPageSize={50}
-        getRowId={p => String(p.data.id)} />
+        getRowId={p => String(p.data.id)} /> */}
+        <AgGridReact rowModelType="infinite" datasource={datasource}
+  cacheBlockSize={100} columnDefs={columnDefs} defaultColDef={defaultColDef}
+  pagination paginationPageSize={50} getRowId={p => String(p.data.id)} />
     </div>
   );
 }
